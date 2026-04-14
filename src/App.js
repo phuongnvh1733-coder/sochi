@@ -14,7 +14,6 @@ const BROWN_XL = "#C4A99A";   // nâu rất nhạt – border, divider
 // Accent – nâu đỏ ấm
 const ACCENT   = "#8B4513";   // saddle brown – CTA chính
 const ACCENT_L = "#B5622A";   // lighter accent
-const ACCENT_BG= "#F5EBE0";   // accent background nhạt
 // Semantic
 const GREEN    = "#3A7D44";   // thu nhập
 const GREEN_BG = "#EAF3EC";
