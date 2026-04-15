@@ -172,7 +172,7 @@ const S = {
             background:BROWN_D, color:WHITE, fontSize:15, fontWeight:700,
             fontFamily:"'Georgia',serif", boxShadow:`0 4px 0 ${BROWN_M},0 6px 16px rgba(61,43,31,.25)`,
             marginTop:8, WebkitTapHighlightColor:"transparent" },
-  progTrack:{ height:7, borderRadius:99, background:BG3, overflow:"hidden" },
+  progTrack:{ height:7, borderRadius:99, background:BG3, overflow:"hidden", maxWidth:"100%" },
   fab:  { width:46, height:46, borderRadius:14, border:"none", cursor:"pointer",
           background:WHITE, color:BROWN_D, fontSize:24,
           display:"flex", alignItems:"center", justifyContent:"center",
@@ -184,6 +184,7 @@ const card3dStyle = color => ({
   border:`1px solid ${color}30`, width:"100%", textAlign:"left",
   boxShadow:`0 4px 0 ${color}40, 0 6px 16px rgba(0,0,0,.08)`,
   WebkitTapHighlightColor:"transparent", display:"block",
+  overflow:"hidden", boxSizing:"border-box",
 });
 
 const mpillStyle = active => ({
@@ -576,107 +577,112 @@ export default function App() {
 
   // ── ADD MODAL ───────────────────────────────────────────────
   const AddModal = () => {
-    const isThu = form.type==="Thu";
-    const cats  = isThu?THU_CATS:CHI_CATS;
-    const subs  = isThu
-      ? (THU_CATS[form.cat]?.subs||[])
-      : (CHI_CATS[form.cat]?.items.map(i=>i.label)||[]);
+  const [lform, setLform] = useState({...form});
+  const setLfield = (k,v) => setLform(p=>({...p,[k]:v}));
 
-    return <div style={S.overlay} onClick={e=>e.target===e.currentTarget&&closeModal()}>
-      <div style={S.sheet}>
-        <div style={S.handle}/>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
-          <div style={{fontSize:17,fontWeight:700,color:BROWN_D}}>
-            {drillItem?drillItem.label:"Thêm Giao Dịch"}
-          </div>
-          <button onClick={closeModal} style={{background:"none",border:"none",
-            color:BROWN_L,fontSize:22,cursor:"pointer",padding:0,
-            WebkitTapHighlightColor:"transparent"}}>✕</button>
+  const isThu = lform.type==="Thu";
+  const cats  = isThu?THU_CATS:CHI_CATS;
+  const subs  = isThu
+    ? (THU_CATS[lform.cat]?.subs||[])
+    : (CHI_CATS[lform.cat]?.items.map(i=>i.label)||[]);
+
+  const handleSave = () => {
+    if(!lform.amount||!lform.desc) return;
+    const amt=parseInt(lform.amount.toString().replace(/\D/g,""),10);
+    if(!amt) return;
+    setTxs(p=>[...p,{...lform,id:nid,amount:amt}]);
+    setNid(n=>n+1); setShowAdd(false); setDrillItem(null);
+    setForm({date:NOW.toISOString().split("T")[0],type:"Chi",cat:"Ăn Uống",sub:"",desc:"",amount:"",pay:"Tiền mặt"});
+  };
+
+  return <div style={S.overlay} onClick={e=>e.target===e.currentTarget&&closeModal()}>
+    <div style={S.sheet}>
+      <div style={S.handle}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+        <div style={{fontSize:17,fontWeight:700,color:BROWN_D}}>
+          {drillItem?drillItem.label:"Thêm Giao Dịch"}
         </div>
+        <button onClick={closeModal} style={{background:"none",border:"none",
+          color:BROWN_L,fontSize:22,cursor:"pointer",padding:0,
+          WebkitTapHighlightColor:"transparent"}}>✕</button>
+      </div>
 
-        {/* Thu/Chi — hide if drill */}
-        {!drillItem&&<div style={{display:"flex",gap:8,marginBottom:18}}>
-          {["Chi","Thu"].map(t=>(
-            <button key={t} onClick={()=>setField("type",t)||setForm(p=>({...p,type:t,cat:t==="Thu"?"Lương Chồng":"Ăn Uống",sub:""}))}
-              style={{flex:1,padding:"11px",borderRadius:14,border:"none",cursor:"pointer",
-                fontSize:13,fontWeight:700,fontFamily:"'Georgia',serif",
-                background:form.type===t?(t==="Thu"?GREEN:BROWN_D):BG2,
-                color:form.type===t?WHITE:BROWN_L,
-                boxShadow:form.type===t?"0 3px 10px rgba(61,43,31,.2)":"none",
+      {!drillItem&&<div style={{display:"flex",gap:8,marginBottom:18}}>
+        {["Chi","Thu"].map(t=>(
+          <button key={t} onClick={()=>setLform(p=>({...p,type:t,cat:t==="Thu"?"Lương Chồng":"Ăn Uống",sub:""}))}
+            style={{flex:1,padding:"11px",borderRadius:14,border:"none",cursor:"pointer",
+              fontSize:13,fontWeight:700,
+              background:lform.type===t?(t==="Thu"?GREEN:BROWN_D):BG2,
+              color:lform.type===t?WHITE:BROWN_L,
+              WebkitTapHighlightColor:"transparent"}}>
+            {t==="Thu"?"💰 Thu nhập":"💸 Chi tiêu"}
+          </button>
+        ))}
+      </div>}
+
+      {!drillItem&&<div style={{marginBottom:16}}>
+        <label style={S.lbl}>Nhóm</label>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+          {Object.entries(cats).map(([cat,cfg])=>(
+            <button key={cat} onClick={()=>setLform(p=>({...p,cat,sub:""}))}
+              style={{padding:"10px 6px",borderRadius:12,cursor:"pointer",
+                background:lform.cat===cat?cfg.color+"15":BG,
+                border:`1.5px solid ${lform.cat===cat?cfg.color:BG3}`,
                 WebkitTapHighlightColor:"transparent"}}>
-              {t==="Thu"?"💰 Thu nhập":"💸 Chi tiêu"}
+              <div style={{fontSize:20,marginBottom:3}}>{cfg.icon}</div>
+              <div style={{fontSize:9,fontWeight:600,lineHeight:1.2,textAlign:"center",
+                color:lform.cat===cat?cfg.color:BROWN_L}}>{cat}</div>
             </button>
           ))}
-        </div>}
-
-        {/* Category grid — hide if drill */}
-        {!drillItem&&<div style={{marginBottom:16}}>
-          <label style={S.lbl}>Nhóm</label>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
-            {Object.entries(cats).map(([cat,cfg])=>(
-              <button key={cat} onClick={()=>setForm(p=>({...p,cat,sub:""}))}
-                style={{padding:"10px 6px",borderRadius:12,cursor:"pointer",
-                  background:form.cat===cat?cfg.color+"15":BG,
-                  border:`1.5px solid ${form.cat===cat?cfg.color:BG3}`,
-                  WebkitTapHighlightColor:"transparent"}}>
-                <div style={{fontSize:20,marginBottom:3}}>{cfg.icon}</div>
-                <div style={{fontSize:9,fontWeight:600,lineHeight:1.2,textAlign:"center",
-                  color:form.cat===cat?cfg.color:BROWN_L}}>{cat}</div>
-              </button>
-            ))}
-          </div>
-        </div>}
-
-        {/* Subs — hide if drill */}
-        {!drillItem&&subs.length>0&&<div style={{marginBottom:16}}>
-          <label style={S.lbl}>Danh mục con</label>
-          <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-            {subs.map(s=>(
-              <button key={s} onClick={()=>setField("sub",s)}
-                style={{padding:"6px 12px",borderRadius:99,border:"none",cursor:"pointer",
-                  fontSize:11,fontWeight:600,
-                  background:form.sub===s?BROWN_D:BG2,
-                  color:form.sub===s?WHITE:BROWN_L,
-                  WebkitTapHighlightColor:"transparent"}}>{s}</button>
-            ))}
-          </div>
-        </div>}
-
-        {/* Amount */}
-        <div style={{marginBottom:14}}>
-          <label style={S.lbl}>Số Tiền (₫)</label>
-          <input type="number" inputMode="numeric" placeholder="0"
-            style={S.inp} value={form.amount}
-            onChange={e=>setField("amount",e.target.value)} autoComplete="off"/>
         </div>
+      </div>}
 
-        {/* Desc */}
-        <div style={{marginBottom:14}}>
-          <label style={S.lbl}>Mô Tả</label>
-          <input type="text" placeholder="Ghi chú..." style={S.inp}
-            value={form.desc} onChange={e=>setField("desc",e.target.value)} autoComplete="off"/>
+      {!drillItem&&subs.length>0&&<div style={{marginBottom:16}}>
+        <label style={S.lbl}>Danh mục con</label>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+          {subs.map(s=>(
+            <button key={s} onClick={()=>setLfield("sub",s)}
+              style={{padding:"6px 12px",borderRadius:99,border:"none",cursor:"pointer",
+                fontSize:11,fontWeight:600,
+                background:lform.sub===s?BROWN_D:BG2,
+                color:lform.sub===s?WHITE:BROWN_L,
+                WebkitTapHighlightColor:"transparent"}}>{s}</button>
+          ))}
         </div>
+      </div>}
 
-        {/* Date + Pay */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-          <div>
-            <label style={S.lbl}>Ngày</label>
-            <input type="date" style={S.inp} value={form.date}
-              onChange={e=>setField("date",e.target.value)}/>
-          </div>
-          <div>
-            <label style={S.lbl}>Thanh Toán</label>
-            <select style={{...S.inp,appearance:"none",WebkitAppearance:"none"}}
-              value={form.pay} onChange={e=>setField("pay",e.target.value)}>
-              {PAYMENT.map(p=><option key={p}>{p}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <button style={S.saveBtn} onClick={addTx}>Lưu Giao Dịch</button>
+      <div style={{marginBottom:14}}>
+        <label style={S.lbl}>Số Tiền (₫)</label>
+        <input type="number" inputMode="numeric" placeholder="0"
+          style={S.inp} value={lform.amount}
+          onChange={e=>setLfield("amount",e.target.value)} autoComplete="off"/>
       </div>
-    </div>;
-  };
+
+      <div style={{marginBottom:14}}>
+        <label style={S.lbl}>Mô Tả</label>
+        <input type="text" placeholder="Ghi chú..." style={S.inp}
+          value={lform.desc} onChange={e=>setLfield("desc",e.target.value)} autoComplete="off"/>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+        <div>
+          <label style={S.lbl}>Ngày</label>
+          <input type="date" style={S.inp} value={lform.date}
+            onChange={e=>setLfield("date",e.target.value)}/>
+        </div>
+        <div>
+          <label style={S.lbl}>Thanh Toán</label>
+          <select style={{...S.inp,appearance:"none",WebkitAppearance:"none"}}
+            value={lform.pay} onChange={e=>setLfield("pay",e.target.value)}>
+            {PAYMENT.map(p=><option key={p}>{p}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <button style={S.saveBtn} onClick={handleSave}>Lưu Giao Dịch</button>
+    </div>
+  </div>;
+};
 
   // ── NAV ─────────────────────────────────────────────────────
   const NAV=[
